@@ -6,35 +6,25 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  build: {
+    outDir: 'dist', // ensures frontend build goes to /dist at project root
+  },
   server: {
-
     port: 80,
-    
     host: true,
-    
     proxy: {
-    
-    '/api': {
-    
-    target: 'http://localhost:8080',
-    
-    changeOrigin: true,
-    
-    }, '/uploads': {
-    
-    target: 'http://localhost:8080',
-    
-    changeOrigin: true,
-    
-    rewrite: (path) => path
-    
-    }
-    
-    }, hmr: {
-    
-    overlay: false
-    
-    }
-    
-    }
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '/uploads': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        rewrite: (path) => path,
+      },
+    },
+    hmr: {
+      overlay: false,
+    },
+  },
 });
