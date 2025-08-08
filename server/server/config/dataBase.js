@@ -1,10 +1,34 @@
 const { Sequelize } = require('sequelize');
 
-const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
-  host: process.env.DB_HOST,
-  dialect: 'postgres',
-  logging: false
-});
+let sequelize;
+
+// If DATABASE_URL exists (Render / Production)
+if (process.env.DATABASE_URL) {
+  sequelize = new Sequelize(process.env.DATABASE_URL, {
+    dialect: 'postgres',
+    protocol: 'postgres',
+    logging: false,
+    dialectOptions: {
+      ssl: {
+        require: true,           // Render Postgres requires SSL
+        rejectUnauthorized: false
+      }
+    }
+  });
+} else {
+  // Local Development using individual env vars
+  sequelize = new Sequelize(
+    process.env.DB_NAME,
+    process.env.DB_USER,
+    process.env.DB_PASSWORD,
+    {
+      host: process.env.DB_HOST,
+      port: process.env.DB_PORT || 5432,
+      dialect: 'postgres',
+      logging: false
+    }
+  );
+}
 
 // Sync Models
 const syncDatabase = async () => {
@@ -16,7 +40,7 @@ const syncDatabase = async () => {
     const User = require('../modules/auth/auth.model');
     const StudentRegistration = require('../modules/events/studentRegistration.model');
     
-    // Define associations after all models are loaded
+    // Define associations
     User.hasMany(StudentRegistration, { foreignKey: 'student_id', as: 'registrations' });
     StudentRegistration.belongsTo(User, { foreignKey: 'student_id', as: 'student' });
     
