@@ -26,5 +26,5 @@ services:
         sync: false
 
 databases:
-  - name: nrolehub-db
+  - name: nrolehub
     plan: free
