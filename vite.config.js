@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
@@ -7,10 +8,11 @@ export default defineConfig({
     exclude: ['lucide-react'],
   },
   build: {
-    outDir: 'dist', // ensures frontend build goes to /dist at project root
+    outDir: path.resolve(__dirname, 'server/server/public'),
+    emptyOutDir: true,
   },
   server: {
-    port: 80,
+    port: 5173,
     host: true,
     proxy: {
       '/api': {
@@ -20,7 +22,7 @@ export default defineConfig({
       '/uploads': {
         target: 'http://localhost:8080',
         changeOrigin: true,
-        rewrite: (path) => path,
+        rewrite: (p) => p,
       },
     },
     hmr: {
