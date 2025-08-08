@@ -4,9 +4,6 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
-  optimizeDeps: {
-    exclude: ['lucide-react'],
-  },
   build: {
     outDir: path.resolve(__dirname, 'server/server/public'),
     emptyOutDir: true,
@@ -22,7 +19,7 @@ export default defineConfig({
       '/uploads': {
         target: 'http://localhost:8080',
         changeOrigin: true,
-        rewrite: (p) => p,
+        rewrite: p => p,
       },
     },
     hmr: {
