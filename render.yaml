@@ -3,28 +3,28 @@ services:
     name: nrolehub
     env: node
     plan: free
-    buildCommand: npm install && npm run build
-    startCommand: node server/server.js
+    buildCommand: npm install && npm run build && cd server/server && npm install
+    startCommand: cd server/server && npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
         fromDatabase:
-          name: nrolehub
+          name: nrolehub-db
           property: connectionString
       - key: RAZORPAY_KEY_ID
         sync: false
       - key: RAZORPAY_KEY_SECRET
         sync: false
+      - key: PAYMENT_CALLBACK_URL
+        value: https://nrolehub.onrender.com/api/payments/testing
+      - key: JWT_SECRET
+        sync: false
       - key: EMAIL_USER
         sync: false
       - key: EMAIL_PASSWORD
         sync: false
-      - key: JWT_SECRET
-        sync: false
-      - key: PAYMENT_CALLBACK_URL
-        sync: false
 
 databases:
-  - name: nrolehub
+  - name: nrolehub-db
     plan: free
