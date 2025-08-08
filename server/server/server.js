@@ -34,11 +34,10 @@ require('dotenv').config();
 const { syncDatabase } = require('./config/dataBase');
 const route = require('./index');
 const path = require('path');
-const fs = require('fs');
 const cors = require('cors');
+const fs = require('fs');
 
-const port = process.env.SERVER_PORT || process.env.PORT || 5000;
-
+const port = process.env.SERVER_PORT || 8080;
 const app = express();
 
 // Increase payload size limits
@@ -57,20 +56,21 @@ app.use('/uploads/events', express.static(uploadsDir));
 // API routes
 app.use('/api', route);
 
-// Serve Vite frontend in production
-if (process.env.NODE_ENV === "production") {
-  const frontendDistPath = path.join(__dirname, "../../dist");
-  app.use(express.static(frontendDistPath));
-  
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(frontendDistPath, "index.html"));
+// ===== Serve Frontend in Production =====
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '../dist');
+  app.use(express.static(distPath));
+
+  // Handle SPA routes
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
   });
 }
 
-// Start server
+// ===== Start Server After DB Sync =====
 syncDatabase().then(() => {
-    console.log('Database is ready!');
-    app.listen(port, () => {
-      console.log(`Server is running on port ${port}`);
-    });
+  console.log('Database is ready!');
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  });
 });
