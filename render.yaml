@@ -3,6 +3,8 @@ services:
     name: nrolehub
     env: node
     plan: free
+    buildCommand: npm install && npm run build && cd server/server && npm install
+    startCommand: cd server/server && npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -24,8 +26,6 @@ services:
         sync: false
       - key: EMAIL_PASSWORD
         sync: false
-    buildCommand: npm install && npm run build && cd server/server && npm install
-    startCommand: cd server/server && npm start
 
 databases:
   - name: nrolehub
