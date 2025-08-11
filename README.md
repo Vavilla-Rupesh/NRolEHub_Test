@@ -140,16 +140,6 @@ We'd love to hear your ideas! Share them in our [discussions](https://github.com
 
 ---
 
-## 📈 Roadmap
-
-- [ ] **Mobile App** - Native iOS and Android applications
-- [ ] **Integration APIs** - Connect with popular LMS platforms
-- [ ] **AI Analytics** - Predictive event attendance modeling
-- [ ] **Multi-language Support** - Internationalization features
-- [ ] **Advanced Reporting** - Custom dashboard builder
-
----
-
 ## 📊 Stats
 
 <div align="center">
