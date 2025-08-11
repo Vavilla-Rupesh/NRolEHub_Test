@@ -21,10 +21,11 @@ export default function Navbar() {
                           group-hover:scale-110 transition-all duration-300"
             >
               <img
-                src="src/components/shared/logo.png"
-                alt="logo"
-                className="w-[60px] h-[30px]"
-              />
+  src="/logo.png"
+  alt="logo"
+  className="w-[60px] h-[30px]"
+/>
+
             </div>
             <span
               className="text-xl font-bold bg-gradient-to-r from-primary to-secondary 
