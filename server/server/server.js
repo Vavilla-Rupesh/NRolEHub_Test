@@ -1,3 +1,5 @@
+// server.js
+
 const express = require('express');
 require('dotenv').config();
 const { syncDatabase } = require('./config/dataBase');
@@ -9,25 +11,26 @@ const fs = require('fs');
 const port = process.env.SERVER_PORT || 8080;
 const app = express();
 
-// Increase payload size limits
+// Increase payload size limits (for large file uploads)
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 app.use(cors());
 
-// Create uploads directory if it doesn't exist
+// ===== Create uploads directory if it doesn't exist =====
 const uploadsDir = path.join(__dirname, 'public', 'uploads', 'events');
 fs.mkdirSync(uploadsDir, { recursive: true });
 
-// Serve uploaded files statically
+// ===== Serve uploaded files statically =====
+// This makes files accessible via /uploads/events/<filename>
 app.use('/uploads/events', express.static(uploadsDir));
 
-// API routes
+// ===== API routes =====
 app.use('/api', route);
 
 // ===== Serve Frontend in Production =====
 if (process.env.NODE_ENV === 'production') {
-  const publicPath = path.join(__dirname, 'public'); // <-- build will go here
+  const publicPath = path.join(__dirname, 'public'); // build output here
   app.use(express.static(publicPath));
 
   // Handle SPA routes
