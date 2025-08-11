@@ -140,6 +140,8 @@ exports.generateTeamCertificates = async (inputs) => {
       }));
 
       console.log('Merit Teams:', teams); // Debug log
+      console.log('Team Name:', team.name, 'Coordinates:', coordinates.teamName);
+
     } else {
       // Get teams with attendance marked
       const teamsWithAttendance = await Team.findAll({
