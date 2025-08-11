@@ -14,10 +14,11 @@ export default function LandingPage() {
         {/* Image Strip Below Navbar */}
         <div className="w-full p-2">
           <img
-            src="src/components/banner1.png" 
-            alt="Campus Image"
-            className="w-full h-auto" 
-          />
+  src="/banner1.png"
+  alt="Campus Image"
+  className="w-full h-auto"
+/>
+
         </div>
   
         {/* Animated background */}
