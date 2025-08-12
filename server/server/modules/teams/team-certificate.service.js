@@ -320,56 +320,93 @@ exports.generateTeamCertificates = async (inputs) => {
     if (!event || !subevent) throw new Error('Event or subevent not found');
 
     let teams = [];
+    
     if (templateType === 'merit') {
+      // For merit certificates - get teams from leaderboard with proper team data
       const leaderboard = await TeamLeaderboard.findAll({
         where: { event_id, subevent_id },
         order: [['rank', 'ASC']],
         include: [{
           model: Team,
-          attributes: ['id', 'name'],
+          attributes: ['id', 'name'], // Make sure to include name attribute
           include: [{
             model: TeamMember,
             where: { status: 'accepted' },
-            include: [{ model: User, as: 'student' }]
+            include: [{ 
+              model: User, 
+              as: 'student',
+              attributes: ['id', 'username', 'email', 'roll_number', 'year', 'semester', 'college_name', 'stream']
+            }]
           }]
         }]
       });
 
-      teams = leaderboard.map(entry => ({
-        ...entry.Team.toJSON(),
-        name: entry.Team.name,
-        rank: entry.rank,
-        score: entry.score
-      }));
+      // Map the leaderboard data correctly
+      teams = leaderboard.map(entry => {
+        const teamData = entry.Team.toJSON();
+        return {
+          id: teamData.id,
+          name: teamData.name, // Ensure team name is properly mapped
+          TeamMembers: teamData.TeamMembers,
+          rank: entry.rank,
+          score: entry.score
+        };
+      });
+
+      console.log('Merit Teams Data:', teams.map(t => ({ id: t.id, name: t.name, rank: t.rank })));
+
     } else {
+      // For participation certificates - get teams with attendance
       const teamsWithAttendance = await Team.findAll({
         where: { event_id, subevent_id },
-        attributes: ['id', 'name'],
+        attributes: ['id', 'name'], // Make sure to include name attribute
         include: [{
           model: TeamMember,
           where: { status: 'accepted' },
-          include: [{ model: User, as: 'student' }]
+          include: [{ 
+            model: User, 
+            as: 'student',
+            attributes: ['id', 'username', 'email', 'roll_number', 'year', 'semester', 'college_name', 'stream']
+          }]
         }]
       });
 
-      const leaderboardTeams = await TeamLeaderboard.findAll({ where: { event_id, subevent_id } });
+      // Filter out teams that are already in leaderboard (merit winners)
+      const leaderboardTeams = await TeamLeaderboard.findAll({ 
+        where: { event_id, subevent_id },
+        attributes: ['team_id']
+      });
       const leaderboardTeamIds = leaderboardTeams.map(t => t.team_id);
 
       teams = teamsWithAttendance
         .filter(team => !leaderboardTeamIds.includes(team.id))
-        .map(team => team.toJSON());
+        .map(team => {
+          const teamData = team.toJSON();
+          return {
+            id: teamData.id,
+            name: teamData.name, // Ensure team name is properly mapped
+            TeamMembers: teamData.TeamMembers
+          };
+        });
+
+      console.log('Participation Teams Data:', teams.map(t => ({ id: t.id, name: t.name })));
     }
 
-    if (!teams.length) throw new Error(`No eligible teams found for ${templateType} certificates`);
+    if (!teams.length) {
+      throw new Error(`No eligible teams found for ${templateType} certificates`);
+    }
 
     const baseDir = path.join(process.cwd(), 'Records', 'Teams');
     await fs.mkdir(baseDir, { recursive: true });
 
+    // Generate certificates for each team member
     for (const team of teams) {
       if (!team.TeamMembers?.length) {
-        console.warn(`Team ${team.id} has no members, skipping`);
+        console.warn(`Team ${team.id} (${team.name}) has no members, skipping`);
         continue;
       }
+
+      console.log(`Processing Team: ID=${team.id}, Name="${team.name}", Members=${team.TeamMembers.length}`);
 
       const eventName = event.event_name;
       const certificateDate = new Date().toLocaleDateString();
@@ -382,32 +419,34 @@ exports.generateTeamCertificates = async (inputs) => {
           continue;
         }
 
-        console.log(`Generating for Team: ${team.name}, Member: ${member.student.username}`);
+        console.log(`Generating certificate for Team: "${team.name}", Member: "${member.student.username}"`);
 
         const certificateId = generateCertificateId(team, member, event, subevent, team.rank);
         const fileName = generateFileName(certificateId, team.name, member.student.username);
         const outputPath = path.join(outputDir, fileName);
 
+        // Pass team name explicitly to the overlay function
         const certificateBuffer = await overlayTextOnImage(
           templateImageBuffer,
-          member.student.username,
-          eventName,
-          certificateDate,
-          coordinates,
-          certificateId,
-          team.rank ? `${team.rank}${getRankSuffix(team.rank)} Place Team` : null,
-          team.name,
+          member.student.username, // Student name
+          eventName, // Event name
+          certificateDate, // Certificate date
+          coordinates, // All coordinates
+          certificateId, // Certificate ID
+          team.rank ? `${team.rank}${getRankSuffix(team.rank)} Place Team` : null, // Rank text
+          team.name, // Team name - this is the key fix
           {
             rollNumber: member.student.roll_number,
             year: member.student.year,
             semester: member.student.semester,
             collegeName: member.student.college_name,
-            stream: member.student.stream // fixed bug here
+            stream: member.student.stream
           }
         );
 
         await fs.writeFile(outputPath, certificateBuffer);
 
+        // Create certificate record in database
         await TeamCertificate.create({
           team_id: team.id,
           member_id: member.id,
@@ -419,6 +458,7 @@ exports.generateTeamCertificates = async (inputs) => {
           issued_at: new Date()
         }, { transaction });
 
+        // Send email with certificate
         try {
           await sendEmailWithAttachment(
             member.student.email,
@@ -427,13 +467,15 @@ exports.generateTeamCertificates = async (inputs) => {
             eventName,
             !!team.rank
           );
+          console.log(`Email sent successfully to ${member.student.email}`);
         } catch (emailErr) {
-          console.error(`Failed to send email to ${member.student.email}`, emailErr);
+          console.error(`Failed to send email to ${member.student.email}:`, emailErr);
         }
       }
     }
 
     await transaction.commit();
+    console.log('Team certificates generated successfully');
     return { success: true, message: 'Team certificates generated successfully' };
 
   } catch (err) {
