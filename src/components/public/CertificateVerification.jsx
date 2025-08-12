@@ -1,11 +1,20 @@
 import React, { useState } from 'react';
-import { Search, Download, FileText, User, Mail, Calendar, Award, Building } from 'lucide-react';
+import {
+  Search,
+  Download,
+  FileText,
+  User,
+  Mail,
+  Calendar,
+  Award,
+  Building,
+} from 'lucide-react';
 import api from '../../lib/api';
-import LoadingSpinner from '../shared/LoadingSpinner';
-import { cn } from '../../lib/utils';
-import { formatCurrency, formatDate } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
+import { formatDate } from '../../lib/utils';
+import LoadingSpinner from '../shared/LoadingSpinner';
+import { cn } from '../../lib/utils';
 
 export default function CertificateVerification() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,19 +32,19 @@ export default function CertificateVerification() {
     try {
       setLoading(true);
       setHasSearched(true);
-      
+
       // Fetch all student data (same as admin student management)
       const response = await api.get('/public/students');
       const allStudents = response.data;
 
-      // Filter by roll number or certificate ID
-      const filteredResults = allStudents.filter(student => 
-        student.roll_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.certificate_id?.toLowerCase().includes(searchTerm.toLowerCase())
+      // Filter by roll number or certificate ID (case-insensitive)
+      const filteredResults = allStudents.filter((student) =>
+        (student.roll_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          student.certificate_id?.toLowerCase().includes(searchTerm.toLowerCase()))
       );
 
       setSearchResults(filteredResults);
-      
+
       if (filteredResults.length === 0) {
         toast.info('No records found for the given search term');
       } else {
@@ -67,15 +76,13 @@ export default function CertificateVerification() {
       'Event',
       'Sub Event',
       'Nature of Activity',
-      'Payment ID',
       'Certificate ID',
       'Attendance',
       'Participation Type',
-      'Amount',
-      'Registration Date'
+      'Registration Date',
     ];
 
-    const csvData = searchResults.map(student => [
+    const csvData = searchResults.map((student) => [
       student.name,
       student.roll_number,
       student.email,
@@ -87,27 +94,13 @@ export default function CertificateVerification() {
       student.event_name,
       student.subevent_name,
       student.nature_of_activity,
-      student.razorpay_payment_id,
       student.certificate_id || 'N/A',
       student.attendance ? 'Present' : 'Absent',
       student.participation_type,
-      formatCurrency(student.amount),
-      formatDate(student.registration_date)
+      formatDate(student.registration_date),
     ]);
 
-    const totalAmount = searchResults.reduce((sum, student) => {
-      const amount = parseFloat(student.amount);
-      return sum + (isNaN(amount) ? 0 : amount);
-    }, 0);
-
-    const totalAmountRow = [
-      'Total Amount',
-      '', '', '', '', '', '', '', '', '', '', '', '', '', '',
-      formatCurrency(totalAmount),
-      ''
-    ];
-
-    const sheetData = [headers, ...csvData, totalAmountRow];
+    const sheetData = [headers, ...csvData];
     const sheetName = searchTerm ? `verification_${searchTerm}` : 'verification_data';
     const ws = XLSX.utils.aoa_to_sheet(sheetData);
     const wb = XLSX.utils.book_new();
@@ -116,6 +109,32 @@ export default function CertificateVerification() {
     XLSX.writeFile(wb, `${sheetName}.xlsx`);
     toast.success('Data exported successfully');
   };
+
+  // Group students by roll_number or email to aggregate their events
+  const getStudentGroups = () => {
+    return searchResults.reduce((acc, record) => {
+      const key = record.roll_number || record.email;
+      if (!acc[key]) {
+        acc[key] = {
+          student: {
+            name: record.name,
+            roll_number: record.roll_number,
+            email: record.email,
+            mobile_number: record.mobile_number,
+            year: record.year,
+            semester: record.semester,
+            college_name: record.college_name,
+            stream: record.stream,
+          },
+          events: [],
+        };
+      }
+      acc[key].events.push(record);
+      return acc;
+    }, {});
+  };
+
+  const studentGroups = getStudentGroups();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-12">
@@ -150,6 +169,7 @@ export default function CertificateVerification() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   required
+                  aria-label="Search by roll number or certificate ID"
                 />
               </div>
               <button
@@ -180,10 +200,7 @@ export default function CertificateVerification() {
                   <h2 className="text-2xl font-bold">
                     Search Results ({searchResults.length} found)
                   </h2>
-                  <button
-                    onClick={exportToXLSX}
-                    className="btn btn-secondary"
-                  >
+                  <button onClick={exportToXLSX} className="btn btn-secondary flex items-center">
                     <Download className="h-4 w-4 mr-2" />
                     Export to XLSX
                   </button>
@@ -191,116 +208,149 @@ export default function CertificateVerification() {
               )}
 
               {searchResults.length > 0 ? (
-                <div className="glass-card overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                      <thead className="bg-gray-50 dark:bg-gray-800">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                            Student Details
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                            Academic Info
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                            Event Details
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                            Certificate & Status
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                        {searchResults.map((student, index) => (
-                          <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                            <td className="px-6 py-4">
-                              <div className="space-y-2">
-                                <div className="flex items-center space-x-2">
-                                  <User className="h-4 w-4 text-primary" />
-                                  <span className="font-medium">{student.name}</span>
-                                </div>
-                                <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                                  <Mail className="h-3 w-3" />
-                                  <span>{student.email}</span>
-                                </div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">
-                                  Mobile: {student.mobile_number}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="space-y-1 text-sm">
-                                <div><strong>Roll:</strong> {student.roll_number}</div>
-                                <div><strong>Year:</strong> {student.year}</div>
-                                <div><strong>Semester:</strong> {student.semester}</div>
-                                <div><strong>Branch:</strong> {student.stream}</div>
-                                <div className="flex items-center space-x-1">
-                                  <Building className="h-3 w-3 text-primary" />
-                                  <span className="text-xs">{student.college_name}</span>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="space-y-2">
-                                <div className="font-medium">{student.event_name}</div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">
-                                  {student.subevent_name}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {student.nature_of_activity}
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <Calendar className="h-3 w-3 text-primary" />
-                                  <span className="text-xs">
-                                    {formatDate(student.registration_date)}
-                                  </span>
-                                </div>
-                                <div className="font-medium text-primary">
-                                  {formatCurrency(student.amount)}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="space-y-2">
-                                <div className="text-sm">
-                                  <strong>Certificate ID:</strong>
-                                  <div className="font-mono text-xs bg-gray-100 dark:bg-gray-800 p-1 rounded mt-1">
-                                    {student.certificate_id || 'N/A'}
-                                  </div>
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                  <span className={cn(
-                                    "px-2 py-1 text-xs rounded-full",
-                                    student.attendance
-                                      ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                                      : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
-                                  )}>
-                                    {student.attendance ? 'Present' : 'Absent'}
-                                  </span>
-                                  <span className={cn(
-                                    "px-2 py-1 text-xs rounded-full",
-                                    student.participation_type === 'Merit'
-                                      ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-                                      : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
-                                  )}>
-                                    {student.participation_type}
-                                    {student.participation_type === 'Merit' && student.rank && 
-                                      ` - Rank ${student.rank}`
-                                    }
-                                  </span>
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  Payment ID: {student.razorpay_payment_id}
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                <div className="space-y-8">
+                  {Object.values(studentGroups).map((group, groupIndex) => (
+                    <div key={groupIndex} className="glass-card">
+                      {/* Student Details Card */}
+                      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg p-6 mb-6">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                          <User className="h-5 w-5 mr-2 text-primary" />
+                          Student Information
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium text-gray-700 dark:text-gray-300">Name:</span>
+                              <span className="text-gray-900 dark:text-gray-100">{group.student.name}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium text-gray-700 dark:text-gray-300">Roll Number:</span>
+                              <span className="text-gray-900 dark:text-gray-100">{group.student.roll_number}</span>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <Mail className="h-4 w-4 text-primary" />
+                              <span className="text-gray-900 dark:text-gray-100">{group.student.email}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium text-gray-700 dark:text-gray-300">Mobile:</span>
+                              <span className="text-gray-900 dark:text-gray-100">{group.student.mobile_number}</span>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium text-gray-700 dark:text-gray-300">Year:</span>
+                              <span className="text-gray-900 dark:text-gray-100">{group.student.year}</span>
+                              <span className="font-medium text-gray-700 dark:text-gray-300 ml-4">Semester:</span>
+                              <span className="text-gray-900 dark:text-gray-100">{group.student.semester}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Building className="h-4 w-4 text-primary" />
+                              <span className="text-sm text-gray-900 dark:text-gray-100">{group.student.college_name}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium text-gray-700 dark:text-gray-300">Branch:</span>
+                              <span className="text-gray-900 dark:text-gray-100">{group.student.stream}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Events Table */}
+                      <div className="bg-white dark:bg-gray-900 rounded-lg shadow overflow-hidden">
+                        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                          <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                            Event Participation History
+                          </h4>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead className="bg-gray-50 dark:bg-gray-800">
+                              <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                  Event Name
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                  Sub Event
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                  Activity Type
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                  Registration Date
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                  Attendance
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                  Certificate Status
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                  Certificate ID
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                              {group.events.map((event, eventIndex) => (
+                                <tr key={eventIndex} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="font-medium text-gray-900 dark:text-gray-100">{event.event_name}</div>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-gray-900 dark:text-gray-100">{event.subevent_name}</div>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-sm text-gray-600 dark:text-gray-400">{event.nature_of_activity}</div>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center space-x-2">
+                                      <Calendar className="h-4 w-4 text-primary" />
+                                      <span className="text-sm text-gray-900 dark:text-gray-100">
+                                        {formatDate(event.registration_date)}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <span
+                                      className={cn(
+                                        'px-3 py-1 text-sm rounded-full font-medium',
+                                        event.attendance
+                                          ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                                          : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                                      )}
+                                    >
+                                      {event.attendance ? 'Present' : 'Absent'}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <span
+                                      className={cn(
+                                        'px-3 py-1 text-sm rounded-full font-medium',
+                                        event.participation_type === 'Merit'
+                                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                                      )}
+                                    >
+                                      {event.participation_type}
+                                      {event.participation_type === 'Merit' && event.rank && ` - Rank ${event.rank}`}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="font-mono text-xs bg-gray-100 dark:bg-gray-800 p-2 rounded">
+                                      {event.certificate_id || 'Not Generated'}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ) : hasSearched && (
+              ) : (
                 <div className="glass-card text-center py-12">
                   <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
