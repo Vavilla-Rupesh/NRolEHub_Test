@@ -13,6 +13,7 @@ import Register from './components/auth/Register';
 import ForgotPassword from './components/auth/ForgotPassword';
 import LandingPage from './components/LandingPage';
 import EventCalendar from './components/shared/EventCalendar';
+import CertificateVerification from './components/public/CertificateVerification';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user } = useAuth();
@@ -44,6 +45,9 @@ const AppContent = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          
+          {/* Public Certificate Verification Route */}
+          <Route path="/verify-certificate" element={<CertificateVerification />} />
           
           {/* Landing Page */}
           <Route 

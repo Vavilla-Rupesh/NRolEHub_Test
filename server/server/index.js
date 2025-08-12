@@ -14,6 +14,7 @@ const adminRoutes = require('./api/routes/admin.route');
 const certificateRoutes = require('./api/routes/certificates.route');
 const mailRoutes = require('./api/routes/mail.route');
 const teamsRoutes = require('./api/routes/teams.route'); // Add this line
+const publicRoutes = require('./api/routes/public.route');
 
 // Route Definitions
 router.use('/auth', authRoutes);
@@ -28,5 +29,6 @@ router.use('/admin', adminRoutes);
 router.use('/certificates', certificateRoutes);
 router.use('/mailRoutes', mailRoutes);
 router.use('/teams', teamsRoutes); // Add this line
+router.use('/public', publicRoutes);
 
 module.exports = router;

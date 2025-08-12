@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, Book, Users, Award, ArrowRight } from 'lucide-react';
+import { GraduationCap, Book, Users, Award, ArrowRight, FileCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 export default function LandingPage() {
     const navigate = useNavigate();
@@ -85,6 +85,26 @@ export default function LandingPage() {
                 <p className="text-gray-600 dark:text-gray-300">
                   Celebrating excellence in academics, sports, and extracurricular activities
                 </p>
+              </div>
+
+              {/* Certificate Verification */}
+              <div className="glass-card transform hover:scale-105 transition-all duration-300">
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="p-3 bg-primary/10 rounded-lg">
+                    <FileCheck className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold">Certificate Verification</h3>
+                </div>
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                  Verify student certificates and participation records instantly
+                </p>
+                <a
+                  href="/verify-certificate"
+                  className="inline-flex items-center text-primary hover:text-primary/80 font-medium"
+                >
+                  Verify Now
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </a>
               </div>
             </div>
   

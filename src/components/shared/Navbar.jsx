@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, User, UserPlus } from "lucide-react";
+import { Menu, X, User, UserPlus, FileCheck } from "lucide-react";
 import NavbarMenu from "./NavbarMenu";
 import UserMenu from "./UserMenu";
 import ThemeToggle from "./ThemeToggle";
@@ -46,6 +46,13 @@ export default function Navbar() {
           ) : (
             // Display login and register for unauthenticated users
             <div className="hidden md:flex md:items-center md:space-x-4">
+              <Link
+                to="/verify-certificate"
+                className="flex items-center space-x-2 text-primary bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-lg transition-all duration-300 hover:bg-green-100 dark:hover:bg-green-800"
+              >
+                <FileCheck className="h-5 w-5 text-primary dark:text-primary-dark" />
+                <span>Verify Certificate</span>
+              </Link>
               <Link
                 to="/login"
                 className="flex items-center space-x-2 text-primary bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg transition-all duration-300 hover:bg-blue-100 dark:hover:bg-blue-800"
@@ -95,6 +102,13 @@ export default function Navbar() {
             </div>
           ) : (
             <div className="space-y-4">
+              <Link
+                to="/verify-certificate"
+                className="flex items-center space-x-2 text-primary bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-lg transition-all duration-300 hover:bg-green-100 dark:hover:bg-green-800"
+              >
+                <FileCheck className="h-5 w-5 text-primary dark:text-primary-dark" />
+                <span>Verify Certificate</span>
+              </Link>
               <Link
                 to="/login"
                 className="flex items-center space-x-2 text-primary bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg transition-all duration-300 hover:bg-blue-100 dark:hover:bg-blue-800"
