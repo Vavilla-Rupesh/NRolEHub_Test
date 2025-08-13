@@ -793,7 +793,7 @@ export default function StudentManagement() {
 
       // Filter out entries without payment ID
       const validData = sortedData.filter(
-        (student) => student.razorpay_payment_id !== "N/A"
+        (student) => student.razorpay_payment_id
       );
 
       // Store all filtered data
@@ -957,6 +957,7 @@ export default function StudentManagement() {
       "Event",
       "Sub Event",
       "Nature of Activity",
+      "Paid/Free",
       "Payment ID",
       "Certificate ID",
       "Attendance",
@@ -1296,6 +1297,7 @@ export default function StudentManagement() {
                           key: "participation_type",
                           label: "Participation/Merit",
                         },
+                        { key: "razorpay_payment_id", label: "Paid/Free" },
                         { key: "razorpay_payment_id", label: "Payment ID" },
                         { key: "amount", label: "Amount" },
                       ].map(({ key, label }) => (
@@ -1388,9 +1390,32 @@ export default function StudentManagement() {
                               ` - Rank ${student.rank}`}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {student.razorpay_payment_id}
+                        <td className="px-4 py-2 text-sm">
+                          {student.razorpay_payment_id &&
+                          student.razorpay_payment_id !== "N/A" ? (
+                            <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-medium">
+                              Paid
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1 rounded-full bg-green-100 text-green-800 font-medium">
+                              Free
+                            </span>
+                          )}
                         </td>
+
+                        <td className="px-4 py-2 text-sm">
+                          {student.razorpay_payment_id &&
+                          student.razorpay_payment_id !== "N/A" ? (
+                            <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-medium">
+                              {student.razorpay_payment_id}
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1 rounded-full bg-green-100 text-green-800 font-medium">
+                              Free
+                            </span>
+                          )}
+                        </td>
+
                         <td className="px-6 py-4 whitespace-nowrap font-medium">
                           {formatCurrency(student.amount)}
                         </td>
